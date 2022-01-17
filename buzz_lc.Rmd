@@ -1,0 +1,82 @@
+---
+title: "Buzz Loot History"
+author: "Kevin magnan"
+date: "Code Updated 1/17/2022"
+output: html_document
+---
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(
+  jsonlite,
+  data.table,
+  DT,
+  tidyverse,
+  tidyr,
+  janitor
+)
+```
+
+## ThatsMyBiS Loot Received
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+## load json file
+buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json", flatten = TRUE))
+
+## unpack dataframes within raw json and limit columns
+buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% select(1,4,39,43,63) %>% rename(id = id...1, char_name = name...4, item_name = name...43, date_received = pivot.received_at)
+
+buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,65,71,18) %>% rename(id = id...1, char_name = name...4, item_name = name...46, received_yn = pivot.is_received, last_updated = pivot.updated_at)
+
+## create master table of raiders
+buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% select(1, 2, 3, 4, 7, 8, 9, 10, 11)
+
+## join received and wishlisted items to master list
+buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  select(name, class, archetype, spec, spec_label, item_id, item_name, date_received) ## combine spec and spec_label
+
+datatable(buzz_master_received, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'),
+          options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
+                         deferRender = TRUE, scrollY = 500, scroller = TRUE),
+          caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their loot received.")
+
+```
+
+## ThatsMyBiS Active Wishlist
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>% select(name, class, archetype, spec, spec_label, item_id, item_name, received_yn, last_updated, public_note)
+
+datatable(buzz_master_wishlist, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'),
+          options = list(pageLength = 25, order = list(9, 'desc'), colReorder = TRUE,
+                         deferRender = TRUE, scrollY = 500, scroller = TRUE),
+          caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their wish list.")
+
+## Next steps
+
+# wowhead links using item ID and this URL https://tbc.wowhead.com/item=30250
+# Escaping table content
+
+# item weights from pre-TMB list and current updated list
+
+# add features to tables
+# - factor character columns to factors so their filter drop downs show
+
+# figure out selection panel -- 
+
+# datatable(
+#   iris,
+#   options = list(dom = 'Pfrtip', columnDefs = list(list(
+#     searchPanes = list(show = FALSE), targets = 1:4
+#   ))),
+#   extensions = c('Select', 'SearchPanes'),
+#   selection = 'none'
+# )
+```
