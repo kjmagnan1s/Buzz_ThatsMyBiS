@@ -1,6 +1,6 @@
 ---
 title: "Buzz Loot History"
-author: "Kevin magnan"
+author: "Kevin Magnan"
 date: "Code Updated 1/17/2022"
 output: html_document
 ---
