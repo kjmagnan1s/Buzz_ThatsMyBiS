@@ -35,15 +35,15 @@ buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/b
 buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% select(1, 2, 3, 4, 7, 8, 9, 10, 11)
 
 ## unpack dataframes within raw json and limit columns
-buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% select(1,4,39,43,63) %>% rename(id = id...1, char_name = name...4, item_name = name...43, date_received = pivot.received_at) %>% 
+buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% select(1,4,39,43,60,63) %>% rename(id = id...1, char_name = name...4, item_name = name...43, offspec_yn = pivot.is_offspec, date_received = pivot.received_at) %>% 
  mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
 
 ## join received and wishlisted items to master list
-buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(name, class, archetype, spec, item_id, item_name, wowhead_link, date_received) %>% 
-  mutate(across(c(name, class, archetype, spec, item_name), factor))
+buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>% 
+  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn), factor))
 
 datatable(buzz_master_received, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
-          options = list(pageLength = 40, order = list(7, 'desc'), colReorder = TRUE,
+          options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
                          deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
           caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their loot received.")
 
@@ -55,8 +55,7 @@ datatable(buzz_master_received, class = 'cell-border stripe', filter = 'top', ex
 buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,65,71,18) %>% rename(id = id...1, char_name = name...4, item_name = name...46, received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% 
   mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
 
-buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, wowhead_link, received_yn, last_updated, public_note) %>% 
-  mutate(across(c(name, class, archetype, spec, item_name), factor))
+buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, wowhead_link, received_yn, last_updated, public_note) %>% mutate(across(c(name, class, archetype, spec, item_name, received_yn), factor))
 
 datatable(buzz_master_wishlist, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
           options = list(pageLength = 25, order = list(8, 'desc'), colReorder = TRUE,
