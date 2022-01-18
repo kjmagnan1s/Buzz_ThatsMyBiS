@@ -21,7 +21,8 @@ pacman::p_load(
   DT,
   tidyverse,
   tidyr,
-  janitor
+  janitor,
+  purrr
 )
 ```
 
@@ -42,11 +43,10 @@ buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% sel
 buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>% 
   mutate(across(c(name, class, archetype, spec, item_name, offspec_yn), factor)) %>% mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N"))
 
-datatable(buzz_master_received, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
+datatable(buzz_master_received, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
           options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
                          deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
           caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their loot received.")
-
 ```
 
 ## ThatsMyBiS Active Wishlist
@@ -57,7 +57,7 @@ buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% sel
 
 buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, wowhead_link, received_yn, last_updated, public_note) %>% mutate(across(c(name, class, archetype, spec, item_name, received_yn), factor)) %>% mutate(received_yn = ifelse(received_yn == 1, "Y", "N"))
 
-datatable(buzz_master_wishlist, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
+datatable(buzz_master_wishlist, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
           options = list(pageLength = 25, order = list(8, 'desc'), colReorder = TRUE,
                          deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
           caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their wish list.")
@@ -66,8 +66,7 @@ datatable(buzz_master_wishlist, class = 'cell-border stripe', filter = 'top', ex
 
 # item weights from pre-TMB list and current updated list
 
-# add features to tables
-# - factor character columns to factors so their filter drop downs show
+# add summary table by class, spec, character? 
 
 # figure out selection panel -- 
 
