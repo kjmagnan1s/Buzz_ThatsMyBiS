@@ -49,7 +49,7 @@ datatable(buzz_master_received, class = 'display cell-border stripe hover row-bo
           options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
                          deferRender = TRUE, scrollY = 500, scroller = TRUE), 
                                            rownames = FALSE,
-          caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their loot received.")
+          caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 ```
 
 ## ThatsMyBiS Active Wishlist
@@ -65,7 +65,7 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  un
 datatable(buzz_master_wishlist, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
           options = list(pageLength = 25, order = list(8, 'desc'), colReorder = TRUE,
                          deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
-          caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their wish list.")
+          caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish list prio.")
 
 ## Next steps
 
