@@ -43,8 +43,8 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  un
   mutate(across(c(name, class, archetype, spec, item_name), factor))
 
 datatable(buzz_master_received, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
-          options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
-                         deferRender = TRUE, scrollY = 500, scroller = TRUE),
+          options = list(pageLength = 40, order = list(7, 'desc'), colReorder = TRUE,
+                         deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
           caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their loot received.")
 
 ```
@@ -59,8 +59,8 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  un
   mutate(across(c(name, class, archetype, spec, item_name), factor))
 
 datatable(buzz_master_wishlist, class = 'cell-border stripe', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
-          options = list(pageLength = 25, order = list(9, 'desc'), colReorder = TRUE,
-                         deferRender = TRUE, scrollY = 500, scroller = TRUE),
+          options = list(pageLength = 25, order = list(8, 'desc'), colReorder = TRUE,
+                         deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
           caption = "Export of Giant JSON blob on ThatsMyBiS. All of our guilds characters with their wish list.")
 
 ## Next steps
