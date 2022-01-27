@@ -1,7 +1,6 @@
 ---
 title: "Buzz Loot History"
 author: "Kevin Magnan"
-date: "Code Updated 1/27/2022"
 output:
   html_document: default
 ---
@@ -12,8 +11,6 @@ output:
   margin-right: auto;
 }
 </style>
-
-As of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
 
 ```{r setup and libraries, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -204,3 +201,8 @@ datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-bor
 
 ## Create a Item wishlist table with players who wishlisted. Swap the group_by from Player > item to Item > player > priority.
 ```
+
+Data as of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
+
+R Code updated `r Sys.Date()`
+
