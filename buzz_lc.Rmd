@@ -1,9 +1,10 @@
 ---
 title: "Buzz Loot History"
 author: "Kevin Magnan"
-date: "Code Updated 1/17/2022"
-output: 
+date: "Code Updated 1/27/2022"
+output:
   html_document: default
+  pdf_document: default
 ---
 <style type="text/css">
 .main-container {
@@ -13,6 +14,7 @@ output:
 }
 </style>
 
+As of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
 
 ```{r setup and libraries, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -98,10 +100,10 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 ```
 
 ```{r Box and Whisker, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
-# 
-# by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>% 
+
+# by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
 #   group_by(Class, Role, Spec) %>%
-#   count(name = "count") 
+#   count(name = "count")
 # 
 # knitr::kable(by_class_spec)
 # 
@@ -132,6 +134,7 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 # 
 # sbtest <- sunburst(tree, width="100%", height=400)
 # sbtest
+
 # plot_ly(data = by_class_spec, y = ~uuid, x = ~Class, color = ~Role, type = "box", boxpoints = "all", jitter = 0)
 
 # by_class_spec %>%ggplot(
@@ -151,27 +154,28 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 ## RShiny(?) dashboard or analytics looking at class/spec loot distrubution. Would be nice to include toggle buttons for MS>OS
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
 
-datatable(buzz_received_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), selection = 'none', escape = FALSE,
-          options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE,
-                         deferRender = TRUE, scrollY = 500, scroller = TRUE), 
-                                           rownames = FALSE,
+received <- datatable(buzz_received_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), selection = 'none', escape = FALSE,
+          options = list(pageLength = 40, order = list(8, 'desc'), colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
+
+received
+
 ```
 
 ## ThatsMyBiS Active Wishlist
 
 ```{r Wishlist Table, echo=FALSE, warning=FALSE, message=FALSE}
-buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,62,65,71,67) %>% rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order,received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% 
-  mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,62,65,71,67) %>% rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order,received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
 
 buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>% mutate(across(c(name, class, archetype, spec, item_name, received_yn), factor)) %>% mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>% rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Received (Y/N)' = received_yn, WoWHead = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
 
 buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item ID`, `Item Order`))
 
-datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
-          options = list(pageLength = 25, order = list(7, 'desc'), colReorder = TRUE,
-                         deferRender = TRUE, scrollY = 500, scroller = TRUE), rownames = FALSE,
+wishlist <- datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE,
+          options = list(pageLength = 25, order = list(7, 'desc'), colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish list prio.")
+
+wishlist
 
 ## Next steps
 
