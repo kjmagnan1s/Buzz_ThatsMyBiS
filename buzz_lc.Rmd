@@ -245,7 +245,7 @@ datatable(buzz_wishlist_table %>%
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 ```
 
-## Buzz wishlists aggregated (showing items on 2+ wishlists only; rep items removed from aggregation)
+## Buzz wishlists aggregated 
 ```{r Wishlist Count Table, echo=FALSE, warning=FALSE, message=FALSE}
 ## add epic pattern drops later and join in
 
@@ -291,7 +291,8 @@ datatable(wishlist_aggregated %>%
             left_join((wishlist_aggregated %>% select(`Item Name`, `Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% distinct()
             # reintroduce item data and wowhead link, remove duplicate rows
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), 
-          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE))
+          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
+          caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
 
 ``` {r Next step ideas, echo=FALSE, warning=FALSE, message=FALSE}
