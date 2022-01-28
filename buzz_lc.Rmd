@@ -199,7 +199,8 @@ buzz_received_table <- buzz_master_received %>% select(Name, Class, Role, Spec, 
 #remove unnecesary columns
 
 datatable(buzz_received_table %>% 
-            mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor))
+            mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
+            distinct()
             # factor columns for better filtering in table
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
             options = list(pageLength = 40, 
@@ -250,8 +251,9 @@ buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
 #remove column(s) for wishlist table
 
 datatable(buzz_wishlist_table %>% 
-            select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note)
+            select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note) %>% 
             # remove unnecessary columns for better table viewing
+            distinct()
           , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
           options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
                         buttons = c('copy', 'csv', 'excel')),
@@ -285,6 +287,8 @@ wishlist_aggregated <- buzz_wishlist_table %>%
             # logical statement to replace item_ID with parent_ID when applicable for wowhead link
             left_join((loot_slot_details %>% select(item_name, `Item Slot` = Slot)), by = (c("Item Name" = "item_name"))) %>%
             # join item slot name
+            distinct() %>% 
+            # remove any dupes
             mutate(across(c(`Instance Name`), factor)) %>%
             # restore factor for filtering
             mutate(` `= paste0("<a href=",'"https://tbc.wowhead.com/item=',item_ID,'">Link</a>')) %>% 
