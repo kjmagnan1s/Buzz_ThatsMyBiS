@@ -24,7 +24,8 @@ pacman::p_load(
   janitor,
   purrr,
   sunburstR,
-  d3r
+  d3r,
+  plotly
 )
 ```
 
@@ -45,7 +46,7 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  un
   mutate(Phase = case_when(
     date_received <= "2022-01-26 00:00:'00" ~ "Phase 2",
     date_received >= "2022-01-30 00:00:00" ~ "Phase 3")) %>% 
-  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn, Phase), factor)) %>% 
+#  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn, Phase), factor)) %>% 
   mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
   rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Offspec (Y/N)' = offspec_yn, WoWHead = wowhead_link, 'Date Received' = date_received)
 
@@ -99,7 +100,7 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 #       )
 ```
 
-```{r Box and Whisker, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
+```{r test plots, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
 
 # by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
 #   group_by(Class, Role, Spec) %>%
@@ -133,11 +134,20 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 # knitr::kable(by_class_spec)
 # 
 # test <- d3_nest(dat, value_cols = "size")
+# tree
 # test
 # 
 # sbtest <- sunburst(test, width="100%", height=400)
 # sbtest
-
+# 
+# burst <- plot_ly(
+#   labels = by_class_spec$Class,
+#   parents = by_class_spec$Role,
+#   values = by_class_spec$count,
+#   type = 'sunburst',
+#   branchvalues = 'total'
+# )
+# burst
 # plot_ly(data = by_class_spec, y = ~uuid, x = ~Class, color = ~Role, type = "box", boxpoints = "all", jitter = 0)
 
 # by_class_spec %>%ggplot(
@@ -175,14 +185,14 @@ datatable(buzz_received_table, class = 'display cell-border stripe hover row-bor
 ## ThatsMyBiS Active Wishlist
 
 ```{r Wishlist Table, echo=FALSE, warning=FALSE, message=FALSE}
-buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,62,65,71,67) %>% rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order,received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,52,62,65,71,67) %>% rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order, received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
 
 buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  
-  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
-  mutate(across(c(name, class, archetype, spec, item_name, received_yn), factor)) %>%
+  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
+  mutate(across(c(name, class, archetype, spec, item_name, instance_name, received_yn), factor)) %>%
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
   mutate(last_updated = ymd_hms(last_updated)) %>% 
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Received (Y/N)' = received_yn, WoWHead = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
+  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, WoWHead = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
 
 buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item ID`, `Item Order`))
 
@@ -191,7 +201,21 @@ datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-bor
 #                         order = list(7, 'desc'), 
                          colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
+```
 
+## Buzz wishlists aggregated
+```{r Wishlist Count Table, echo=FALSE, warning=FALSE, message=FALSE}
+
+datatable(buzz_wishlist_table %>% 
+            select(`Item Name`, Class, Role, Name) %>% 
+            group_by(`Item Name`, Name) %>%
+            summarise(Count = n()) %>% 
+            summarise(Wishlisted = str_c(Name, collapse = ", "), Count = sum(Count)) %>%
+            filter(Count > 2), class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), 
+          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE))
+```
+
+``` {r Next step ideas, echo=FALSE, warning=FALSE, message=FALSE}
 ## Next steps
 
 # item weights from pre-TMB list and current updated list
