@@ -245,7 +245,7 @@ datatable(buzz_wishlist_table %>%
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 ```
 
-## Buzz wishlists aggregated (showing items on 2+ wishlists only)
+## Buzz wishlists aggregated (showing items on 2+ wishlists only; rep items removed from aggregation)
 ```{r Wishlist Count Table, echo=FALSE, warning=FALSE, message=FALSE}
 ## add epic pattern drops later and join in
 
