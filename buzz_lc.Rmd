@@ -25,7 +25,8 @@ pacman::p_load(
   purrr,
   sunburstR,
   d3r,
-  plotly
+  plotly,
+  readr
 )
 ```
 
@@ -33,29 +34,51 @@ pacman::p_load(
 ## load json file
 buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json", flatten = TRUE))
 
+## load iter/patterns from P6
+tier6_itemID <- read_csv("phase6_itemIDs.csv")
+
 ## create master table of raiders
-buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% select(1, 2, 3, 4, 7, 8, 9, 10, 11)
+buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% 
+  select(1, 2, 3, 4, 7, 8, 9, 10, 11)
+  # limit colunmns to a master table of buzz character names  
 
 ## unpack dataframes within raw json and limit columns
-buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% select(1,4,38,39,43,60,63) %>% rename(uuid = id...38,id = id...1, char_name = name...4, item_name = name...43, offspec_yn = pivot.is_offspec, date_received = pivot.received_at) %>% 
- mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+buzz_received <- buzz_raw %>%  
+  unnest(received, names_repair = "unique") %>% 
+    # unnest wishlist column into its own table and make all column names unique
+  select(1,4,38,39,43,60,63) %>% 
+  # limit columns
+  rename(uuid = id...38,id = id...1, char_name = name...4, item_name = name...43, offspec_yn = pivot.is_offspec, date_received = pivot.received_at) %>% 
+  # rename columns
+  mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+  # insert item_id into a wowhead link
 
 ## join received and wishlisted items to master list
-buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
+buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
+  # join received table with master character table
+  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%
+  #combine spec and spec label
+  select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
+  #limit columns
   mutate(date_received = ymd_hms(date_received)) %>% 
+  # format date received column for proper filtering in table
   mutate(Phase = case_when(
     date_received <= "2022-01-26 00:00:'00" ~ "Phase 2",
     date_received >= "2022-01-30 00:00:00" ~ "Phase 3")) %>% 
-#  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn, Phase), factor)) %>% 
+  # logical for grouping loot into TBC phased releases 
   mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Offspec (Y/N)' = offspec_yn, WoWHead = wowhead_link, 'Date Received' = date_received)
+  # recode received column to Y/N
+  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
+  # final rename
 
 buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
+#remove unnecesary columns
 ```
 
 ```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
 
 ## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
+## Instead of by month, factor the data by slot number - head, shoulder, hands, boots, legs, etc
 
 # by_day <- buzz_master_received %>% 
 #   mutate(
@@ -185,33 +208,89 @@ datatable(buzz_received_table, class = 'display cell-border stripe hover row-bor
 ## ThatsMyBiS Active Wishlist
 
 ```{r Wishlist Table, echo=FALSE, warning=FALSE, message=FALSE}
-buzz_wishlist <- buzz_raw %>%  unnest(wishlist, names_repair = "unique") %>% select(1,4,42,46,52,62,65,71,67) %>% rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order, received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+buzz_wishlist <- buzz_raw %>%  
+  unnest(wishlist, names_repair = "unique") %>%
+  # unnest wishlist column into its own table and make all column names unique
+  select(1,4,42,44,46,52,62,65,71,67) %>% 
+  # limit columns selected
+  rename(id = id...1, char_name = name...4, item_name = name...46, 'Item Order' = pivot.order, received_yn = pivot.is_received, last_updated = pivot.updated_at) %>% 
+  # rename columns
+  mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
+  # insert item_ids into a wowhead link
 
-buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%  
-  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>% select(name, class, archetype, spec, item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
+buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
+  # join the wishlist table to the master character table
+  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%
+  # combine spec and spec label
+  select(name, class, archetype, spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
+  #limit columns
   mutate(across(c(name, class, archetype, spec, item_name, instance_name, received_yn), factor)) %>%
+  # factor columns for better filtering in table
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
+  # recode received column to Y/N
   mutate(last_updated = ymd_hms(last_updated)) %>% 
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, WoWHead = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
+  # format datetime column properly
+  rename(Name = name, Class = class, Role = archetype, Spec = spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
+  # rename columns
 
-buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item ID`, `Item Order`))
+buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
+#remove column(s) for wishlist table
 
-datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), escape = FALSE, rownames = FALSE,
-          options = list(pageLength = 25, 
-#                         order = list(7, 'desc'), 
-                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
+datatable(buzz_wishlist_table %>% 
+            select(!c(item_ID, parent_item_id))
+            # remove unnecessary columns for better table viewing
+          , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
+          options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
+                        buttons = c('copy', 'csv', 'excel')),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 ```
 
-## Buzz wishlists aggregated
+## Buzz wishlists aggregated (showing items on 2+ wishlists only)
 ```{r Wishlist Count Table, echo=FALSE, warning=FALSE, message=FALSE}
+## add epic pattern drops later and join in
 
-datatable(buzz_wishlist_table %>% 
-            select(`Item Name`, Class, Role, Name) %>% 
+wishlist_aggregated <- buzz_wishlist_table %>%
+            filter(`Received (Y/N)` == "N") %>% 
+            left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
+            # join tier6 google doc with data fixes from WoWHead for tier and patterns
+            mutate(across(c(`Item Name`, `Instance Name`), as.character)) %>% 
+            # un-factor these columns, re-factor later
+            mutate(across(c(item_ID), as.double)) %>%                         
+            # convert to double to be compared against another double column
+            mutate(`Item Name` = case_when(                                   
+              `Instance Name` %in% NA  ~ Token_Pattern,
+              TRUE ~ `Item Name`)) %>%
+            # logical statement to replace item name with tier/pattern name when instance is NA
+            mutate(`Instance Name` = case_when(                               # logical statement to replace zone when NA
+              `Instance Name` %in% NA ~ Zone,
+              TRUE ~ `Instance Name`)) %>%
+            # logical statement to replace zone when NA
+            mutate(item_ID = case_when(                                       
+              item_ID < parent_item_id ~ parent_item_id,
+              TRUE ~ item_ID)) %>%
+            # logical statement to replace item_ID with parent_ID when applicable for wowhead link
+            mutate(across(c(`Item Name`, `Instance Name`), factor)) %>%
+            # restore factor for filtering
+            mutate(` `= paste0("<a href=",'"https://tbc.wowhead.com/item=',item_ID,'">Link</a>')) %>% 
+            # replace wowhead links with token/pattern item_ids when applicable
+            drop_na(`Item Name`) %>% 
+            select(!c(item_ID, parent_item_id, Zone, Token_Pattern))
+            # deselect columns
+
+datatable(wishlist_aggregated %>% 
+            select(`Item Name`, Name, `Instance Name`, ` `, Class, Role) %>% 
+            # limit columns
             group_by(`Item Name`, Name) %>%
+            # group by columns to aggregate on
             summarise(Count = n()) %>% 
+            # count rows
             summarise(Wishlisted = str_c(Name, collapse = ", "), Count = sum(Count)) %>%
-            filter(Count > 2), class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), 
+            # collapse character names into a single string and sum up counts
+            filter(Count >= 2) %>% 
+            # retain wishlisted items over 2
+            left_join((wishlist_aggregated %>% select(`Item Name`, `Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% distinct()
+            # reintroduce item data and wowhead link, remove duplicate rows
+            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), 
           escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE))
 ```
 
