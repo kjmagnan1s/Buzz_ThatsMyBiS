@@ -40,10 +40,13 @@ buzz_received <- buzz_raw %>%  unnest(received, names_repair = "unique") %>% sel
  mutate(wowhead_link = paste0("<a href=",'"https://tbc.wowhead.com/item=',item_id,'">Link</a>'))
 
 ## join received and wishlisted items to master list
-buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>% 
-  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn), factor)) %>% 
-  mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
+buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%  select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
   mutate(date_received = ymd_hms(date_received)) %>% 
+  mutate(Phase = case_when(
+    date_received <= "2022-01-26 00:00:'00" ~ "Phase 2",
+    date_received >= "2022-01-30 00:00:00" ~ "Phase 3")) %>% 
+  mutate(across(c(name, class, archetype, spec, item_name, offspec_yn, Phase), factor)) %>% 
+  mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
   rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Offspec (Y/N)' = offspec_yn, WoWHead = wowhead_link, 'Date Received' = date_received)
 
 buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
@@ -157,7 +160,14 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 datatable(buzz_received_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
           options = list(pageLength = 40, 
                          #order = list(8, 'desc'), 
-                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
+                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, searchCols = list(
+                           list(NULL, NULL, NULL, NULL, NULL,
+                                list(search = 'N'),
+                                NULL, NULL
+                                ,list(search = "[Phase 2]")
+                           )
+                           )
+                         ),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 
 ```
@@ -180,7 +190,7 @@ datatable(buzz_wishlist_table, class = 'display cell-border stripe hover row-bor
           options = list(pageLength = 25, 
 #                         order = list(7, 'desc'), 
                          colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
-          caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish list prio.")
+          caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 
 ## Next steps
 
