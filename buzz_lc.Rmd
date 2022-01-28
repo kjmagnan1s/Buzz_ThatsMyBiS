@@ -190,8 +190,11 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 ## RShiny(?) dashboard or analytics looking at class/spec loot distrubution. Would be nice to include toggle buttons for MS>OS
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
 
-datatable(buzz_received_table, class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
-          options = list(pageLength = 40, 
+datatable(buzz_received_table %>% 
+            mutate(across(c(Name, Class, Role, Spec, `Offspec (Y/N)`, Phase), factor))
+            # factor columns for better filtering in table
+            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
+            options = list(pageLength = 40, 
                          #order = list(8, 'desc'), 
                          colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, searchCols = list(
                            list(NULL, NULL, NULL, NULL, NULL,
@@ -201,7 +204,7 @@ datatable(buzz_received_table, class = 'display cell-border stripe hover row-bor
                            )
                            )
                          ),
-          caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
+            caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 
 ```
 
@@ -224,7 +227,7 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # combine spec and spec label
   select(name, class, archetype, spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
   #limit columns
-  mutate(across(c(name, class, archetype, spec, item_name, instance_name, received_yn), factor)) %>%
+  mutate(across(c(name, class, archetype, spec, instance_name, received_yn), factor)) %>%
   # factor columns for better filtering in table
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
@@ -269,7 +272,7 @@ wishlist_aggregated <- buzz_wishlist_table %>%
               item_ID < parent_item_id ~ parent_item_id,
               TRUE ~ item_ID)) %>%
             # logical statement to replace item_ID with parent_ID when applicable for wowhead link
-            mutate(across(c(`Item Name`, `Instance Name`), factor)) %>%
+            mutate(across(c(`Instance Name`), factor)) %>%
             # restore factor for filtering
             mutate(` `= paste0("<a href=",'"https://tbc.wowhead.com/item=',item_ID,'">Link</a>')) %>% 
             # replace wowhead links with token/pattern item_ids when applicable
@@ -290,8 +293,9 @@ datatable(wishlist_aggregated %>%
             # retain wishlisted items over 2
             left_join((wishlist_aggregated %>% select(`Item Name`, `Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% distinct()
             # reintroduce item data and wowhead link, remove duplicate rows
-            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller'), 
-          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE),
+            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
+          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
+                        buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
 
