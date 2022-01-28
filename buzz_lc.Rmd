@@ -37,10 +37,16 @@ buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/b
 ## load iter/patterns from P6
 tier6_itemID <- read_csv("phase6_itemIDs.csv")
 
+## load tmb loot details
+loot_slot_details <- read.csv("loot_details_slot.csv")
+
 ## create master table of raiders
 buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% 
   select(1, 2, 3, 4, 7, 8, 9, 10, 11)
   # limit colunmns to a master table of buzz character names  
+
+# klsjhjfdkl
+test_invtype <- buzz_raw %>% unnest(received, names_repair = "unique") %>% data.table("name...43", "inventory_type")
 
 ## unpack dataframes within raw json and limit columns
 buzz_received <- buzz_raw %>%  
@@ -68,11 +74,10 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # logical for grouping loot into TBC phased releases 
   mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
+  left_join((loot_slot_details %>% select(item_name, Slot)), by = (c("item_name" = "item_name"))) %>% 
+  # join in item slot
+  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
   # final rename
-
-buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
-#remove unnecesary columns
 ```
 
 ```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
@@ -190,8 +195,11 @@ buzz_received_table <- buzz_master_received %>% select(!c(uuid, `Item ID`))
 ## RShiny(?) dashboard or analytics looking at class/spec loot distrubution. Would be nice to include toggle buttons for MS>OS
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
 
+buzz_received_table <- buzz_master_received %>% select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase)
+#remove unnecesary columns
+
 datatable(buzz_received_table %>% 
-            mutate(across(c(Name, Class, Role, Spec, `Offspec (Y/N)`, Phase), factor))
+            mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor))
             # factor columns for better filtering in table
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
             options = list(pageLength = 40, 
@@ -227,20 +235,22 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # combine spec and spec label
   select(name, class, archetype, spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
   #limit columns
-  mutate(across(c(name, class, archetype, spec, instance_name, received_yn), factor)) %>%
+  left_join((loot_slot_details %>% select(item_name, Slot)), by = (c("item_name" = "item_name"))) %>%
+  # join item slot name
+  mutate(across(c(name, class, archetype, spec, instance_name, received_yn, Slot), factor)) %>%
   # factor columns for better filtering in table
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
   mutate(last_updated = ymd_hms(last_updated)) %>% 
   # format datetime column properly
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note)
+  rename(Name = name, Class = class, Role = archetype, Spec = spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note, `Item Slot` = Slot)
   # rename columns
 
 buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
 #remove column(s) for wishlist table
 
 datatable(buzz_wishlist_table %>% 
-            select(!c(item_ID, parent_item_id))
+            select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note)
             # remove unnecessary columns for better table viewing
           , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
           options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
@@ -253,6 +263,7 @@ datatable(buzz_wishlist_table %>%
 ## add epic pattern drops later and join in
 
 wishlist_aggregated <- buzz_wishlist_table %>%
+            select(!c(`Item Slot`)) %>% 
             filter(`Received (Y/N)` == "N") %>% 
             left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
             # join tier6 google doc with data fixes from WoWHead for tier and patterns
@@ -272,6 +283,8 @@ wishlist_aggregated <- buzz_wishlist_table %>%
               item_ID < parent_item_id ~ parent_item_id,
               TRUE ~ item_ID)) %>%
             # logical statement to replace item_ID with parent_ID when applicable for wowhead link
+            left_join((loot_slot_details %>% select(item_name, `Item Slot` = Slot)), by = (c("Item Name" = "item_name"))) %>%
+            # join item slot name
             mutate(across(c(`Instance Name`), factor)) %>%
             # restore factor for filtering
             mutate(` `= paste0("<a href=",'"https://tbc.wowhead.com/item=',item_ID,'">Link</a>')) %>% 
@@ -279,6 +292,7 @@ wishlist_aggregated <- buzz_wishlist_table %>%
             drop_na(`Item Name`) %>% 
             select(!c(item_ID, parent_item_id, Zone, Token_Pattern))
             # deselect columns
+
 
 datatable(wishlist_aggregated %>% 
             select(`Item Name`, Name, `Instance Name`, ` `, Class, Role) %>% 
@@ -291,8 +305,10 @@ datatable(wishlist_aggregated %>%
             # collapse character names into a single string and sum up counts
             filter(Count >= 2) %>% 
             # retain wishlisted items over 2
-            left_join((wishlist_aggregated %>% select(`Item Name`, `Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% distinct()
+            left_join((wishlist_aggregated %>% select(`Item Name`, `Item Slot`,`Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% 
             # reintroduce item data and wowhead link, remove duplicate rows
+            select(`Item Name`, `Item Slot`, Wishlisted, Count, `Instance Name`, ` `, ) %>% 
+            distinct()
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
           escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
                         buttons = c('copy', 'csv', 'excel')),
