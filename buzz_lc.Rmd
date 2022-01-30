@@ -26,7 +26,8 @@ pacman::p_load(
   sunburstR,
   d3r,
   plotly,
-  readr
+  readr,
+  shiny
 )
 ```
 
@@ -78,134 +79,6 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # join in item slot
   rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
   # final rename
-```
-
-```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
-
-## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
-## Instead of by month, factor the data by slot number - head, shoulder, hands, boots, legs, etc
-
-# by_day <- buzz_master_received %>% 
-#   mutate(
-#     `Date Received` = as_datetime(`Date Received`, ),
-#     created_date = floor_date(`Date Received`, "day"),
-#     week_day = wday(`Date Received`)
-#   ) %>% 
-#   select(`Date Received`, week_day) %>% 
-#   na.omit() %>% 
-#   mutate(
-#     week_day = factor(week_day, levels = 1:7, labels = c(
-#       "Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"
-#     )),
-#     week = floor_date(`Date Received`, "week"),
-#     week = as_date(week),
-#     month = floor_date(`Date Received`, "month"),
-#     month = as_date(month)
-#   ) %>% 
-#   group_by(week, week_day, month) %>% 
-#   count(name = "count")
-# 
-# months <- seq(min(by_day$month), max(by_day$month), by = "month")
-# months_label <- strftime(months, "%b")
-# 
-# less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "#767676"))
-# more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "#767676"))
-# 
-# by_day %>% ggplot() +
-#       aes(week, fct_rev(week_day), fill = count) +
-#       geom_tile(width = 0.90 * 7, height = 0.90) +
-#       coord_fixed(7) +
-#       theme_minimal(18, base_family = "PT Sans") +
-#       labs(x = NULL, y = NULL) +
-#       scale_x_date(expand = c(0, 0), breaks = months, labels = months_label) +
-#       ggsci::scale_fill_material("deep-orange") +
-#       theme(
-#         legend.position = "bottom",
-#         panel.grid = element_blank(),
-#         axis.ticks.y = element_blank(),
-#         axis.text.x = element_text(hjust = 0.5),
-#         plot.margin = margin(1.5, 0, 1.5, 0)
-#       )
-
-# arrange columns into factors and count number of items per class per slot
-by_slot <- buzz_master_received %>% 
-   mutate(across(c(Class, `Item Slot`), factor)) %>% 
-  na.omit() %>%
-  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N") %>% 
-  group_by(Class, `Item Slot`) %>% 
-  count(name = "count") %>% 
-  mutate(fill = cut(count,
-                    seq(0, 12, 2),
-                    right = TRUE,
-                    labels = c("2", "4", "6", "8", "10", "12")
-                    ))
-                    
-Class_label <- by_slot$Class
-Item_slot_label <- by_slot$`Item Slot`
-
-less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "767676"))
-more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "767676"))
-
-# ggplotly(
-by_slot %>% ggplot() +
-  aes(`Item Slot`, Class, fill = fill) +
-  geom_tile(
-    width = .8, height = .8
-  ) +
-  coord_fixed(ratio = 1) +
-  geom_hline(yintercept = seq(.5, 9, 1), col = "white", size = 2) +
-  geom_vline(xintercept = seq(.5, 15, 1), col = "white", size = 2) +
-  theme_minimal(12, base_family = "PT Sans") +
-  labs(x = NULL, y = NULL) +
-  scale_x_discrete(expand = c(0,0), breaks = by_slot$`Item Slot`, labels = Item_slot_label) +
-  scale_fill_manual(
-    limits = levels(fill),
-    values = c("#EBEDF0", "#C6E48B", "#7BC96F", "#239A3B", "#196127", "#154F21"),
-    name = NULL
-  ) +
-#  scale_fill_gradientn(colors = jdb_palette("brewer_green"), na.value = "grey") +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_blank(),
-    panel.grid = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-    plot.margin = margin(1.5, 0, 1.5, 0),
-    plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
-  ) +
- ggtitle(paste0(nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N")) - 1, " pieces of loot awarded so far")) +
-  guides(fill = guide_legend(nrow = 1)) +
-   annotation_custom(less,
-                     xmin = 2,
-                     xmax = 2, ymin = -4, ymax = -2) +
-   annotation_custom(more,
-                     xmin = 12,
-                     xmax = 12, ymin = -4, ymax = -2)
-# ) 
-
-# # this is necessary to get the annotations outside the plotting area to print
-# gt <- ggplot_gtable(ggplot_build(cal))
-# gt$layout$clip[gt$layout$name == "panel"] <- "off"
-# grid::grid.draw(gt)
-```
-
-```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
- by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
-  separate(Spec, into = c("Spec")) %>% 
-  group_by(Class, Role, Spec) %>%
-  count(name = "count") %>%
-  mutate(count = as.double(count)) %>% 
-  mutate(sequence = paste0(Class, "-",Role, "-", Spec)) %>% 
-  ungroup() %>% 
-  select(sequence, count)
-
- by_class_spec <- data.frame(by_class_spec, stringsAsFactors = FALSE)
-
- sb1 <- sunburst(by_class_spec, width = "100%", height = 400)
- sb1
-
- sb2 <- sund2b(by_class_spec)
- sb2
 ```
 
 ## ThatsMyBiS Loot Received
@@ -346,7 +219,146 @@ datatable(wishlist_aggregated %>%
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
+Data as of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
 
+R Code updated `r Sys.Date()`
+
+<hr/>
+
+
+## Fun stuff
+
+```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
+
+## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
+## Instead of by month, factor the data by slot number - head, shoulder, hands, boots, legs, etc
+
+# by_day <- buzz_master_received %>% 
+#   mutate(
+#     `Date Received` = as_datetime(`Date Received`, ),
+#     created_date = floor_date(`Date Received`, "day"),
+#     week_day = wday(`Date Received`)
+#   ) %>% 
+#   select(`Date Received`, week_day) %>% 
+#   na.omit() %>% 
+#   mutate(
+#     week_day = factor(week_day, levels = 1:7, labels = c(
+#       "Sun", "Mon", "Tues", "Wed", "Thurs", "Fri", "Sat"
+#     )),
+#     week = floor_date(`Date Received`, "week"),
+#     week = as_date(week),
+#     month = floor_date(`Date Received`, "month"),
+#     month = as_date(month)
+#   ) %>% 
+#   group_by(week, week_day, month) %>% 
+#   count(name = "count")
+# 
+# months <- seq(min(by_day$month), max(by_day$month), by = "month")
+# months_label <- strftime(months, "%b")
+# 
+# less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "#767676"))
+# more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "#767676"))
+# 
+# by_day %>% ggplot() +
+#       aes(week, fct_rev(week_day), fill = count) +
+#       geom_tile(width = 0.90 * 7, height = 0.90) +
+#       coord_fixed(7) +
+#       theme_minimal(18, base_family = "PT Sans") +
+#       labs(x = NULL, y = NULL) +
+#       scale_x_date(expand = c(0, 0), breaks = months, labels = months_label) +
+#       ggsci::scale_fill_material("deep-orange") +
+#       theme(
+#         legend.position = "bottom",
+#         panel.grid = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         axis.text.x = element_text(hjust = 0.5),
+#         plot.margin = margin(1.5, 0, 1.5, 0)
+#       )
+
+# arrange columns into factors and count number of items per class per slot
+by_slot <- buzz_master_received %>% 
+   mutate(across(c(Class, `Item Slot`), factor)) %>% 
+  na.omit() %>%
+  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N") %>% 
+  group_by(Class, `Item Slot`) %>% 
+  count(name = "count") %>% 
+  mutate(fill = cut(count,
+                    seq(0, 12, 2),
+                    right = TRUE,
+                    labels = c("2", "4", "6", "8", "10", "12")
+                    ))
+                    
+Class_label <- by_slot$Class
+Item_slot_label <- by_slot$`Item Slot`
+
+less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "767676"))
+more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "767676"))
+
+# ggplotly(
+by_slot %>% ggplot() +
+  aes(`Item Slot`, Class, fill = fill) +
+  geom_tile(
+    width = .8, height = .8
+  ) +
+  coord_fixed(ratio = 1) +
+  geom_hline(yintercept = seq(.5, 9, 1), col = "white", size = 2) +
+  geom_vline(xintercept = seq(.5, 15, 1), col = "white", size = 2) +
+  theme_minimal(12, base_family = "PT Sans") +
+  labs(x = NULL, y = NULL) +
+  scale_x_discrete(expand = c(0,0), breaks = by_slot$`Item Slot`, labels = Item_slot_label) +
+  scale_fill_manual(
+    limits = levels(fill),
+    values = c("#EBEDF0", "#C6E48B", "#7BC96F", "#239A3B", "#196127", "#154F21"),
+    name = NULL
+  ) +
+#  scale_fill_gradientn(colors = jdb_palette("brewer_green"), na.value = "grey") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.margin = margin(1.5, 0, 1.5, 0),
+    plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
+  ) +
+ ggtitle(paste0(nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N")) - 1, " pieces of loot awarded so far")) +
+  guides(fill = guide_legend(nrow = 1)) +
+   annotation_custom(less,
+                     xmin = 2,
+                     xmax = 2, ymin = -4, ymax = -2) +
+   annotation_custom(more,
+                     xmin = 12,
+                     xmax = 12, ymin = -4, ymax = -2)
+# ) 
+
+# # this is necessary to get the annotations outside the plotting area to print
+# gt <- ggplot_gtable(ggplot_build(cal))
+# gt$layout$clip[gt$layout$name == "panel"] <- "off"
+# grid::grid.draw(gt)
+```
+
+```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE}
+by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
+ separate(Spec, into = c("Spec")) %>% 
+ group_by(Class, Role, Spec) %>%
+ count(name = "count") %>%
+ mutate(count = as.double(count)) %>% 
+ mutate(sequence = paste0(Class, "-",Role, "-", Spec)) %>% 
+ ungroup() %>% 
+ select(sequence, count)
+
+by_class_spec <- data.frame(by_class_spec, stringsAsFactors = FALSE)
+
+sb1 <- sunburst(by_class_spec, width = "50%", height = 400, count = TRUE)
+sb1
+
+sb2 <- sund2b(by_class_spec,
+              colors = list(range = RColorBrewer::brewer.pal(9, "Greens")),
+              rootLabel = list('Loot'),
+              width = "100%",
+              height = 400)
+sb2
+```
 ``` {r Next step ideas, echo=FALSE, warning=FALSE, message=FALSE}
 ## Next steps
 
@@ -367,7 +379,3 @@ datatable(wishlist_aggregated %>%
 
 ## Create a Item wishlist table with players who wishlisted. Swap the group_by from Player > item to Item > player > priority.
 ```
-
-Data as of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
-
-R Code updated `r Sys.Date()`
