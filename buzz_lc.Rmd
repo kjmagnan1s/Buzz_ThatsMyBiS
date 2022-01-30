@@ -80,7 +80,7 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # final rename
 ```
 
-```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
+```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
 
 ## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
 ## Instead of by month, factor the data by slot number - head, shoulder, hands, boots, legs, etc
@@ -126,62 +126,86 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
 #         axis.text.x = element_text(hjust = 0.5),
 #         plot.margin = margin(1.5, 0, 1.5, 0)
 #       )
+
+# arrange columns into factors and count number of items per class per slot
+by_slot <- buzz_master_received %>% 
+   mutate(across(c(Class, `Item Slot`), factor)) %>% 
+  na.omit() %>%
+  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N") %>% 
+  group_by(Class, `Item Slot`) %>% 
+  count(name = "count") %>% 
+  mutate(fill = cut(count,
+                    seq(0, 12, 2),
+                    right = TRUE,
+                    labels = c("2", "4", "6", "8", "10", "12")
+                    ))
+                    
+Class_label <- by_slot$Class
+Item_slot_label <- by_slot$`Item Slot`
+
+less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "767676"))
+more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "767676"))
+
+# ggplotly(
+by_slot %>% ggplot() +
+  aes(`Item Slot`, Class, fill = fill) +
+  geom_tile(
+    width = .8, height = .8
+  ) +
+  coord_fixed(ratio = 1) +
+  geom_hline(yintercept = seq(.5, 9, 1), col = "white", size = 2) +
+  geom_vline(xintercept = seq(.5, 15, 1), col = "white", size = 2) +
+  theme_minimal(12, base_family = "PT Sans") +
+  labs(x = NULL, y = NULL) +
+  scale_x_discrete(expand = c(0,0), breaks = by_slot$`Item Slot`, labels = Item_slot_label) +
+  scale_fill_manual(
+    limits = levels(fill),
+    values = c("#EBEDF0", "#C6E48B", "#7BC96F", "#239A3B", "#196127", "#154F21"),
+    name = NULL
+  ) +
+#  scale_fill_gradientn(colors = jdb_palette("brewer_green"), na.value = "grey") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.margin = margin(1.5, 0, 1.5, 0),
+    plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
+  ) +
+ ggtitle(paste0(nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N")) - 1, " pieces of loot awarded so far")) +
+  guides(fill = guide_legend(nrow = 1)) +
+   annotation_custom(less,
+                     xmin = 2,
+                     xmax = 2, ymin = -4, ymax = -2) +
+   annotation_custom(more,
+                     xmin = 12,
+                     xmax = 12, ymin = -4, ymax = -2)
+# ) 
+
+# # this is necessary to get the annotations outside the plotting area to print
+# gt <- ggplot_gtable(ggplot_build(cal))
+# gt$layout$clip[gt$layout$name == "panel"] <- "off"
+# grid::grid.draw(gt)
 ```
 
-```{r test plots, echo=FALSE, warning=FALSE, message=FALSE, fig.width=12, fig.height=6}
+```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
+ by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
+  separate(Spec, into = c("Spec")) %>% 
+  group_by(Class, Role, Spec) %>%
+  count(name = "count") %>%
+  mutate(count = as.double(count)) %>% 
+  mutate(sequence = paste0(Class, "-",Role, "-", Spec)) %>% 
+  ungroup() %>% 
+  select(sequence, count)
 
-# by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
-#   group_by(Class, Role, Spec) %>%
-#   count(name = "count")
-# 
-# by_class_spec$count <- as.double(by_class_spec$count)
-# 
-# knitr::kable(by_class_spec)
-# 
-# tree <- d3_nest(by_class_spec, value_cols = "count")
-# tree
-# 
-# sb1 <- sunburst(tree, width = "100%", height = 400)
-# 
-# sb1
-# 
-# sb2 <- sund2b(tree)
-# 
-# sb2
-# 
-# dat <- data.frame(
-#   level1 = rep(c("a", "b"), each=3),
-#   level2 = paste0(rep(c("a", "b"), each=3), 1:3),
-#   size = c(10,5,2,3,8,6),
-#   stringsAsFactors = FALSE
-# )
-# 
-# dat
-# by_class_spec
-# knitr::kable(dat)
-# knitr::kable(by_class_spec)
-# 
-# test <- d3_nest(dat, value_cols = "size")
-# tree
-# test
-# 
-# sbtest <- sunburst(test, width="100%", height=400)
-# sbtest
-# 
-# burst <- plot_ly(
-#   labels = by_class_spec$Class,
-#   parents = by_class_spec$Role,
-#   values = by_class_spec$count,
-#   type = 'sunburst',
-#   branchvalues = 'total'
-# )
-# burst
-# plot_ly(data = by_class_spec, y = ~uuid, x = ~Class, color = ~Role, type = "box", boxpoints = "all", jitter = 0)
+ by_class_spec <- data.frame(by_class_spec, stringsAsFactors = FALSE)
 
-# by_class_spec %>%ggplot(
-#   aes(x = Class, y = count, fill = factor(Role))) +
-#     geom_dotplot(method = "histodot", binwidth = 0.12, dotsize = 1.25) +
-#   scale_y_continuous(NULL, breaks = NULL)
+ sb1 <- sunburst(by_class_spec, width = "100%", height = 400)
+ sb1
+
+ sb2 <- sund2b(by_class_spec)
+ sb2
 ```
 
 ## ThatsMyBiS Loot Received
@@ -347,4 +371,3 @@ datatable(wishlist_aggregated %>%
 Data as of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
 
 R Code updated `r Sys.Date()`
-
