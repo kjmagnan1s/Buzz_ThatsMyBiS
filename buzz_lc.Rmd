@@ -68,7 +68,8 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
   #limit columns
   mutate(date_received = ymd_hms(date_received)) %>% 
-  # format date received column for proper filtering in table
+  separate(date_received, into = c("date_received"), sep = " ") %>% 
+  # format date received column for proper filtering in table and remove time
   mutate(Phase = case_when(
     date_received <= "2022-01-26 00:00:'00" ~ "Phase 2",
     date_received >= "2022-01-30 00:00:00" ~ "Phase 3")) %>% 
@@ -102,16 +103,12 @@ datatable(buzz_received_table %>%
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
             options = list(pageLength = 40, 
                          #order = list(8, 'desc'), 
-                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, searchCols = list(
-                           list(NULL, NULL, NULL, NULL, NULL,
-                                list(search = 'N'),
-                                NULL, NULL
-                                ,list(search = "[Phase 2]")
-                           )
-                           )
-                         ),
+                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = 
+                           list(list(6, 'desc')),
+                         searchCols = list(
+                           NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["N"]'), NULL, NULL, list(search = '["Phase 3"]'))),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
-
+## 9
 ```
 
 ## ThatsMyBiS Active Wishlist
@@ -139,8 +136,9 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # factor columns for better filtering in table
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
-  mutate(last_updated = ymd_hms(last_updated)) %>% 
-  # format datetime column properly
+  mutate(last_updated = ymd_hms(last_updated)) %>%
+  separate(last_updated, into = c("last_updated"), sep = " ") %>% 
+  # format datetime column properly and remove time
   rename(Name = name, Class = class, Role = archetype, Spec = spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note, `Item Slot` = Slot)
   # rename columns
 
@@ -152,7 +150,8 @@ datatable(buzz_wishlist_table %>%
             # remove unnecessary columns for better table viewing
             distinct()
           , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
-          options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
+          options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
+                           list(list(9, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 ```
@@ -215,7 +214,8 @@ datatable(wishlist_aggregated %>%
             distinct()
             # remove dupes
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
-          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip',
+          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
+                                                             list(list(3, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
