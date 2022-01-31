@@ -104,11 +104,11 @@ datatable(buzz_received_table %>%
             options = list(pageLength = 40, 
                          #order = list(8, 'desc'), 
                          colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = 
-                           list(list(6, 'desc')),
+                           list(list(8, 'desc')),
                          searchCols = list(
                            NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["N"]'), NULL, NULL, list(search = '["Phase 3"]'))),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
-## 9
+
 ```
 
 ## ThatsMyBiS Active Wishlist
