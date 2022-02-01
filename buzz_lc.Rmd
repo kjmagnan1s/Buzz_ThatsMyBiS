@@ -207,7 +207,7 @@ datatable(wishlist_aggregated %>%
             # retain wishlisted items over 2
             left_join((wishlist_aggregated %>% select(`Item Name`, `Item Slot`,`Instance Name`, ` `) %>% group_by(`Item Name`)), by = "Item Name") %>% 
             # reintroduce item data and wowhead link, remove duplicate rows
-            mutate(across(c(`Item Slot`, Boss),factor)) %>% 
+            mutate(across(c(`Item Slot`),factor)) %>% 
             #factor item slot
             select(`Item Name`, Boss, `Item Slot`, Wishlisted, Count, `Instance Name`, ` `, ) %>% 
             # reduce columns
