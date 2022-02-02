@@ -6,7 +6,7 @@ output:
 ---
 <style type="text/css">
 .main-container {
-  max-width: 1800px;
+  max-width: 1600px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -108,7 +108,6 @@ datatable(buzz_received_table %>%
                          searchCols = list(
                            NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["N"]'), NULL, NULL, NULL, list(search = '["Phase 3"]'))),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
-
 ```
 
 ## ThatsMyBiS Active Wishlist
@@ -215,7 +214,7 @@ datatable(wishlist_aggregated %>%
             # remove dupes
             , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
           escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
-                                                             list(list(3, 'desc')),
+                                                             list(list(4, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
@@ -227,7 +226,7 @@ R Code updated `r Sys.Date()`
 
 
 ## Fun stuff
-
+### Loot distribution by spec and item slot since Phase 2
 ```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
 
 ## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
@@ -337,8 +336,9 @@ by_slot %>% ggplot() +
 # grid::grid.draw(gt)
 ```
 
+### Phase 3 Loot Distribution Sunburst
 ```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE}
-by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N") %>%
+by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N" & Phase == "Phase 3") %>%
  separate(Spec, into = c("Spec")) %>% 
  group_by(Class, Role, Spec) %>%
  count(name = "count") %>%
