@@ -274,11 +274,58 @@ R Code updated `r Sys.Date()`
 #         plot.margin = margin(1.5, 0, 1.5, 0)
 #       )
 
+## Phase 3
 # arrange columns into factors and count number of items per class per slot
 by_slot <- buzz_master_received %>% 
    mutate(across(c(Class, `Item Slot`), factor)) %>% 
   na.omit() %>%
-  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N") %>% 
+  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 3") %>% 
+  group_by(Class, `Item Slot`) %>% 
+  count(name = "fill")
+                    
+Class_label <- by_slot$Class
+Item_slot_label <- by_slot$`Item Slot`
+
+less <- grid::textGrob("Less", gp = grid::gpar(fontsize = 10, col = "767676"))
+more <- grid::textGrob("More", gp = grid::gpar(fontsize = 10, col = "767676"))
+
+# ggplotly(
+by_slot %>% ggplot() +
+  aes(`Item Slot`, Class, fill = fill) +
+  geom_tile(
+    width = .8, height = .8
+  ) +
+  coord_fixed(ratio = 1) +
+  geom_hline(yintercept = seq(.5, 9, 1), col = "white", size = 2) +
+  geom_vline(xintercept = seq(.5, 15, 1), col = "white", size = 2) +
+  theme_minimal(12, base_family = "PT Sans") +
+  labs(x = NULL, y = NULL) +
+  scale_x_discrete(expand = c(0,0), breaks = by_slot$`Item Slot`, labels = Item_slot_label) +
+  scale_fill_gradientn(colors = BuenColors::jdb_palette("brewer_green"), na.value = "grey") +
+  theme(
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    panel.grid = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+    plot.margin = margin(1.5, 0, 1.5, 0),
+    plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
+  ) +
+ ggtitle(paste0("Phase 3: ", nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 3")) - 1, " pieces of loot awarded so far")) +
+  guides(fill = guide_legend(nrow = 1)) +
+   annotation_custom(less,
+                     xmin = 2,
+                     xmax = 2, ymin = -4, ymax = -2) +
+   annotation_custom(more,
+                     xmin = 12,
+                     xmax = 12, ymin = -4, ymax = -2)
+
+## Phase 2
+# arrange columns into factors and count number of items per class per slot
+by_slot <- buzz_master_received %>% 
+   mutate(across(c(Class, `Item Slot`), factor)) %>% 
+  na.omit() %>%
+  filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 2") %>% 
   group_by(Class, `Item Slot`) %>% 
   count(name = "count") %>% 
   mutate(fill = cut(count,
@@ -320,7 +367,7 @@ by_slot %>% ggplot() +
     plot.margin = margin(1.5, 0, 1.5, 0),
     plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
   ) +
- ggtitle(paste0(nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N")) - 1, " pieces of loot awarded so far")) +
+ ggtitle(paste0("Phase 2: ", nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 2")) - 1, " pieces of loot awarded so far")) +
   guides(fill = guide_legend(nrow = 1)) +
    annotation_custom(less,
                      xmin = 2,
