@@ -129,6 +129,24 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # combine spec and spec label
   select(name, class, archetype, spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
   #limit columns
+  left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
+  # join tier6 google doc with data fixes from WoWHead for tier and patterns
+  mutate(across(c(item_name, instance_name), as.character)) %>% 
+  # un-factor these columns, re-factor later
+  mutate(across(c(item_id), as.double)) %>%                         
+  # convert to double to be compared against another double column
+  mutate(item_name = case_when(                                   
+         instance_name %in% NA  ~ Token_Pattern,
+         TRUE ~ item_name)) %>%
+  # logical statement to replace item name with tier/pattern name when instance is NA
+  mutate(instance_name = case_when(                               # logical statement to replace zone when NA
+         instance_name %in% NA ~ Zone,
+         TRUE ~ instance_name)) %>%
+  # logical statement to replace zone when NA
+  mutate(item_id = case_when(                                       
+         item_id < parent_item_id ~ parent_item_id,
+         TRUE ~ item_id)) %>%
+  # logical statement to replace item_ID with parent_ID when applicable for wowhead link
   left_join((loot_slot_details %>% select(item_name, Slot, Boss = source_name)), by = (c("item_name" = "item_name"))) %>%
   # join item slot name
   mutate(across(c(name, class, archetype, spec, instance_name, received_yn, Slot), factor)) %>%
@@ -162,25 +180,7 @@ datatable(buzz_wishlist_table %>%
 wishlist_aggregated <- buzz_wishlist_table %>%
             select(!c(`Item Slot`)) %>% 
             filter(`Received (Y/N)` == "N") %>% 
-            left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
-            # join tier6 google doc with data fixes from WoWHead for tier and patterns
-            mutate(across(c(`Item Name`, `Instance Name`), as.character)) %>% 
-            # un-factor these columns, re-factor later
-            mutate(across(c(item_ID), as.double)) %>%                         
-            # convert to double to be compared against another double column
-            mutate(`Item Name` = case_when(                                   
-              `Instance Name` %in% NA  ~ Token_Pattern,
-              TRUE ~ `Item Name`)) %>%
-            # logical statement to replace item name with tier/pattern name when instance is NA
-            mutate(`Instance Name` = case_when(                               # logical statement to replace zone when NA
-              `Instance Name` %in% NA ~ Zone,
-              TRUE ~ `Instance Name`)) %>%
-            # logical statement to replace zone when NA
-            mutate(item_ID = case_when(                                       
-              item_ID < parent_item_id ~ parent_item_id,
-              TRUE ~ item_ID)) %>%
-            # logical statement to replace item_ID with parent_ID when applicable for wowhead link
-            left_join((loot_slot_details %>% select(item_name, `Item Slot` = Slot)), by = (c("Item Name" = "item_name"))) %>%
+            left_join((loot_slot_details %>% select(item_name, `Item Slot` = Slot, )), by = (c("Item Name" = "item_name"))) %>%
             # join item slot name
             distinct() %>% 
             # remove any dupes
