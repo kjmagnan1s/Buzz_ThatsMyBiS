@@ -27,7 +27,10 @@ pacman::p_load(
   d3r,
   plotly,
   readr,
-  shiny
+  shiny,
+  streamgraph,
+  tidytext,
+  wordcloud
 )
 ```
 
@@ -381,6 +384,28 @@ by_slot %>% ggplot() +
 # gt <- ggplot_gtable(ggplot_build(cal))
 # gt$layout$clip[gt$layout$name == "panel"] <- "off"
 # grid::grid.draw(gt)
+
+
+buzz_master_received %>% 
+  select(`Date Received`, Class) %>% 
+  mutate(date = floor_date(as_date(`Date Received`))) %>% 
+  group_by(date, Class) %>% 
+  count(name = "count") %>% 
+  na.omit() %>% 
+  ungroup()%>% 
+  streamgraph("Class", "count", "date", order = "reverse") %>% 
+    sg_legend(show=TRUE, label="Highlight Class: ") %>% 
+    sg_fill_tableau()
+
+
+words <- buzz_master_wishlist %>%
+  select(item_name = `Item Name`) %>% 
+  na.omit() %>% 
+  unnest_tokens(word, item_name) %>% 
+  anti_join(stop_words)
+
+wordcloud(words$word, min.freq = 2, random.order = FALSE,
+          colors = brewer.pal(9, "BrBG"))
 ```
 
 ### Phase 3 Loot Distribution Sunburst
