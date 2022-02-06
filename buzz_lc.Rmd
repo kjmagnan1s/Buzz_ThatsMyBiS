@@ -23,15 +23,15 @@ pacman::p_load(
   tidyr,
   janitor,
   purrr,
-  sunburstR,
-  d3r,
   plotly,
   readr,
   shiny,
-  streamgraph,
   tidytext,
-  wordcloud
-)
+  sunburstR,
+  d3r,
+  streamgraph,
+  sparkline
+  )
 ```
 
 ```{r Load Data, echo=FALSE, warning=FALSE, message=FALSE}
@@ -46,7 +46,7 @@ loot_slot_details <- read.csv("loot_details_slot.csv")
 
 ## create master table of raiders
 buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% 
-  select(1, 2, 3, 4, 7, 8, 9, 10, 11)
+  select(1, 2, 3, 4, 7, 8, 9, 36)
   # limit colunmns to a master table of buzz character names  
 
 # klsjhjfdkl
@@ -66,9 +66,7 @@ buzz_received <- buzz_raw %>%
 ## join received and wishlisted items to master list
 buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # join received table with master character table
-  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%
-  #combine spec and spec label
-  select(uuid, name, class, archetype, spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
+  select(uuid, name, class, archetype, display_spec, item_id, item_name, offspec_yn, wowhead_link, date_received) %>%
   #limit columns
   mutate(date_received = ymd_hms(date_received)) %>% 
   separate(date_received, into = c("date_received"), sep = " ") %>% 
@@ -81,11 +79,54 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # recode received column to Y/N
   left_join((loot_slot_details %>% select(item_name, Slot, Boss = source_name)), by = (c("item_name" = "item_name"))) %>% 
   # join in item slot
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
+  rename(Name = name, Class = class, Role = archetype, Spec = display_spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
   # final rename
 ```
 
 ## ThatsMyBiS Loot Received
+
+
+<p>
+  <a class="btn btn-info" data-toggle="collapse" href="#collapseExample1" role="button" aria-expanded="false" aria-controls="collapseExample1">
+    Click For Aggregated Sparkline table
+  </a>
+</p>
+<div class="collapse" id="collapseExample1">
+  <div class="card card-body">
+```{r Sparkline Table, echo=FALSE, warning=FALSE, message=FALSE}
+tidyloot <- buzz_master_received %>% 
+  group_by(Name, `Date Received`) %>% 
+  mutate(Date = floor_date(as_date(`Date Received`))) %>%
+  summarise(count = n())
+
+loot_sparkline <- tidyloot %>% 
+  group_by(Name) %>% 
+  summarize(
+    Trend = spk_chr(
+      count, type="line"
+    )
+  )
+
+buzz_master_received %>%
+  select(Name, Class, Role, Spec) %>%
+  group_by(Name, Class, Role, Spec) %>%
+  summarise(Received = n()) %>% 
+  left_join(loot_sparkline) %>% 
+  datatable(rownames = FALSE, escape = FALSE, options = list(compact = TRUE, autoWidth = TRUE, pageLength = 40, scrollY = 500,
+                           fnDrawCallback = htmlwidgets::JS(
+                             '
+                             function(){
+                              HTMLWidgets.staticRender();
+                             }
+                             '
+                           )
+                           )) %>% 
+  spk_add_deps()
+
+```
+
+  </div>
+</div>
 
 ```{r Received Table, echo=FALSE, warning=FALSE, message=FALSE}
 
@@ -95,20 +136,17 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
 
 ## RShiny(?) dashboard or analytics looking at class/spec loot distrubution. Would be nice to include toggle buttons for MS>OS
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
-
-buzz_received_table <- buzz_master_received %>% select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase)
-#remove unnecesary columns
-
-datatable(buzz_received_table %>% 
-            mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
-            distinct()
-            # factor columns for better filtering in table
-            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'), rownames = FALSE, selection = 'none', escape = FALSE,
-            options = list(pageLength = 40, 
-                         #order = list(8, 'desc'), 
-                         colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = 
-                           list(list(9, 'desc')),
-                         searchCols = list(
+  
+buzz_master_received %>% 
+  select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
+  mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
+  distinct() %>% 
+  # factor columns for better filtering in table
+  datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'),
+            rownames = FALSE, selection = 'none', escape = FALSE, 
+            options = list(pageLength = 40,
+                           #order = list(8, 'desc'),
+                           colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = list(list(9, 'desc')),searchCols = list(
                            NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["N"]'), NULL, NULL, NULL, list(search = '["Phase 3"]'))),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 ```
@@ -128,9 +166,7 @@ buzz_wishlist <- buzz_raw %>%
 
 buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # join the wishlist table to the master character table
-  unite('spec', spec:spec_label, sep = ' | ', remove = FALSE) %>%
-  # combine spec and spec label
-  select(name, class, archetype, spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
+  select(name, class, archetype, display_spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
   #limit columns
   left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
   # join tier6 google doc with data fixes from WoWHead for tier and patterns
@@ -152,25 +188,25 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # logical statement to replace item_ID with parent_ID when applicable for wowhead link
   left_join((loot_slot_details %>% select(item_name, Slot, Boss = source_name)), by = (c("item_name" = "item_name"))) %>%
   # join item slot name
-  mutate(across(c(name, class, archetype, spec, instance_name, received_yn, Slot), factor)) %>%
+  mutate(across(c(name, class, archetype, display_spec, instance_name, received_yn, Slot), factor)) %>%
   # factor columns for better filtering in table
   mutate(received_yn = ifelse(received_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
   mutate(last_updated = ymd_hms(last_updated)) %>%
   separate(last_updated, into = c("last_updated"), sep = " ") %>% 
   # format datetime column properly and remove time
-  rename(Name = name, Class = class, Role = archetype, Spec = spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note, `Item Slot` = Slot)
+  rename(Name = name, Class = class, Role = archetype, Spec = display_spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note, `Item Slot` = Slot)
   # rename columns
 
 buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
 #remove column(s) for wishlist table
 
-datatable(buzz_wishlist_table %>% 
+buzz_wishlist_table %>% 
             select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note) %>% 
             # remove unnecessary columns for better table viewing
-            distinct()
-          , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
-          options = list(pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
+            distinct() %>% 
+          datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
+          options = list(nowrap = FALSE, pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
                            list(list(10, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
@@ -196,7 +232,7 @@ wishlist_aggregated <- buzz_wishlist_table %>%
             # deselect columns
 
 
-datatable(wishlist_aggregated %>% 
+wishlist_aggregated %>% 
             select(`Item Name`, Boss, Name, `Instance Name`, ` `, Class, Role) %>% 
             # limit columns
             group_by(`Item Name`, Boss, Name) %>%
@@ -213,10 +249,10 @@ datatable(wishlist_aggregated %>%
             #factor item slot
             select(`Item Name`, Boss, `Item Slot`, Wishlisted, Count, `Instance Name`, ` `, ) %>% 
             # reduce columns
-            distinct()
+            distinct() %>% 
             # remove dupes
-            , class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
-          escape = FALSE, rownames = FALSE, options = list(pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
+            datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), 
+          escape = FALSE, rownames = FALSE, options = list(nowrap = FALSE, pageLength = 25, colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
                                                              list(list(4, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
@@ -228,8 +264,18 @@ R Code updated `r Sys.Date()`
 <hr/>
 
 
+  
 ## Fun stuff
 ### Loot distribution by spec and item slot since Phase 2
+
+<p>
+  <a class="btn btn-info" data-toggle="collapse" href="#collapseExample2" role="button" aria-expanded="false" aria-controls="collapseExample2">
+    Click For Visualizations
+  </a>
+</p>
+
+<div class="collapse" id="collapseExample2">
+  <div class="card card-body">
 ```{r GitHub Calendar, echo=FALSE, warning=FALSE, message=FALSE, fig.width=15, fig.height=6}
 
 ## Fun idea to recreate the GitHub calendar heatmap. Doesn't work very well since loot gets recorded in a lag.
@@ -384,9 +430,37 @@ by_slot %>% ggplot() +
 # gt <- ggplot_gtable(ggplot_build(cal))
 # gt$layout$clip[gt$layout$name == "panel"] <- "off"
 # grid::grid.draw(gt)
+```
 
 
-buzz_master_received %>% 
+
+### Phase 3 Loot Distribution Sunburst and Streamgraph
+
+```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE, fig.width=10, fig.height=5, fig.align='center'}
+# by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N" & Phase == "Phase 3") %>%
+#  separate(Spec, into = c("Spec")) %>% 
+#  group_by(Class, Role, Spec) %>%
+#  count(name = "count") %>%
+#  mutate(count = as.double(count)) %>% 
+#  mutate(sequence = paste0(Class, "-",Role, "-", Spec)) %>% 
+#  ungroup() %>% 
+#  select(sequence, count)
+# 
+# by_class_spec <- data.frame(by_class_spec, stringsAsFactors = FALSE)
+# 
+# sb1 <- sunburst(by_class_spec, width = "50%", height = 400, count = TRUE)
+# sb1
+# 
+# sb2 <- sund2b(by_class_spec,
+#               colors = list(range = RColorBrewer::brewer.pal(9, "Greens")),
+#               rootLabel = list('Loot'),
+#               width = "100%",
+#               height = 400)
+# sb2
+
+
+buzz_master_received %>%
+  filter(`Offspec (Y/N)` == "N") %>% 
   select(`Date Received`, Class) %>% 
   mutate(date = floor_date(as_date(`Date Received`))) %>% 
   group_by(date, Class) %>% 
@@ -397,40 +471,37 @@ buzz_master_received %>%
     sg_legend(show=TRUE, label="Highlight Class: ") %>% 
     sg_fill_tableau()
 
-
-words <- buzz_master_wishlist %>%
-  select(item_name = `Item Name`) %>% 
+buzz_master_received %>%
+  filter(`Offspec (Y/N)` == "N") %>% 
+  select(`Date Received`, Role) %>% 
+  mutate(date = floor_date(as_date(`Date Received`))) %>% 
+  group_by(date, Role) %>% 
+  count(name = "count") %>% 
   na.omit() %>% 
-  unnest_tokens(word, item_name) %>% 
-  anti_join(stop_words)
+  ungroup()%>% 
+  streamgraph("Role", "count", "date", order = "reverse") %>% 
+    sg_legend(show=TRUE, label="Highlight Role: ") %>% 
+    sg_fill_tableau()
 
-wordcloud(words$word, min.freq = 2, random.order = FALSE,
-          colors = brewer.pal(9, "BrBG"))
+buzz_master_received %>%
+  filter(`Offspec (Y/N)` == "N") %>% 
+  select(`Date Received`, Spec) %>% 
+  mutate(date = floor_date(as_date(`Date Received`))) %>% 
+  group_by(date, Spec) %>% 
+  count(name = "count") %>% 
+  na.omit() %>% 
+  ungroup()%>% 
+  streamgraph("Spec", "count", "date", order = "reverse") %>% 
+    sg_legend(show=TRUE, label="Highlight Spec: ") %>% 
+    sg_fill_tableau()
+
+# htmlwidgets::saveWidget(sg1, "sg1.html")
+# display_html('')
 ```
 
-### Phase 3 Loot Distribution Sunburst
-```{r sunburst, echo=FALSE, warning=FALSE, message=FALSE}
-by_class_spec <- buzz_master_received %>% filter(`Offspec (Y/N)` == "N" & Phase == "Phase 3") %>%
- separate(Spec, into = c("Spec")) %>% 
- group_by(Class, Role, Spec) %>%
- count(name = "count") %>%
- mutate(count = as.double(count)) %>% 
- mutate(sequence = paste0(Class, "-",Role, "-", Spec)) %>% 
- ungroup() %>% 
- select(sequence, count)
+   </div>
+</div> 
 
-by_class_spec <- data.frame(by_class_spec, stringsAsFactors = FALSE)
-
-sb1 <- sunburst(by_class_spec, width = "50%", height = 400, count = TRUE)
-sb1
-
-sb2 <- sund2b(by_class_spec,
-              colors = list(range = RColorBrewer::brewer.pal(9, "Greens")),
-              rootLabel = list('Loot'),
-              width = "100%",
-              height = 400)
-sb2
-```
 ``` {r Next step ideas, echo=FALSE, warning=FALSE, message=FALSE}
 ## Next steps
 
