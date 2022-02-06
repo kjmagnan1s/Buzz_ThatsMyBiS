@@ -93,6 +93,8 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
 </p>
 <div class="collapse" id="collapseExample1">
   <div class="card card-body">
+  
+~*Need to figure out how to control table width*~
 ```{r Sparkline Table, echo=FALSE, warning=FALSE, message=FALSE}
 tidyloot <- buzz_master_received %>% 
   group_by(Name, `Date Received`) %>% 
