@@ -149,7 +149,7 @@ buzz_master_received %>%
             options = list(pageLength = 40,
                            #order = list(8, 'desc'),
                            colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = list(list(9, 'desc')),searchCols = list(
-                           NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["N"]'), NULL, NULL, NULL, list(search = '["Phase 3"]'))),
+                           NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["Phase 3"]'))),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 ```
 
