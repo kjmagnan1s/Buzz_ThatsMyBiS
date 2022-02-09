@@ -1,6 +1,6 @@
 ---
 title: "Buzz Loot History"
-author: "Kevin Magnan"
+author: ""
 output:
   html_document: default
 ---
@@ -11,6 +11,8 @@ output:
   margin-right: auto;
 }
 </style>
+
+<h5> <span style="color:grey">Last updated `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`</span> </h5>
 
 ```{r setup and libraries, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -261,9 +263,6 @@ wishlist_aggregated %>%
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Showing items on 2+ wishlists only; rep items removed from aggregation.")
 ```
-Data as of `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`
-
-R Code updated `r Sys.Date()`
 
 <hr/>
 
@@ -526,3 +525,5 @@ buzz_master_received %>%
 
 ## Create a Item wishlist table with players who wishlisted. Swap the group_by from Player > item to Item > player > priority.
 ```
+
+R Code updated `r Sys.Date()`
