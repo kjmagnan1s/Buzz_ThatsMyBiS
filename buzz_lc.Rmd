@@ -142,6 +142,7 @@ buzz_master_received %>%
 buzz_master_received %>% 
   select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
   mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
+  mutate(`Date Received` = as_date(`Date Received`)) %>% 
   distinct() %>% 
   # factor columns for better filtering in table
   datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Select', 'SearchPanes'),
@@ -204,7 +205,8 @@ buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
 #remove column(s) for wishlist table
 
 buzz_wishlist_table %>% 
-            select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note) %>% 
+            select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note) %>%
+            mutate(`Date Received` = as_date(`Last Updated`)) %>% 
             # remove unnecessary columns for better table viewing
             distinct() %>% 
           datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
