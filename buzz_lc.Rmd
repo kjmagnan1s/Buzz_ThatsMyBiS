@@ -85,7 +85,7 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # final rename
 ```
 
-## ThatsMyBiS Loot Received
+
 
 
 <p>
@@ -131,6 +131,8 @@ buzz_master_received %>%
 
   </div>
 </div>
+
+## ThatsMyBiS Loot Received
 
 ```{r Received Table, echo=FALSE, warning=FALSE, message=FALSE}
 
