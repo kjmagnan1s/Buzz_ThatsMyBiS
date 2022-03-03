@@ -207,7 +207,11 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   rename(Name = name, Class = class, Role = archetype, Spec = display_spec, item_ID = item_id, 'Item Name' = item_name, 'Instance Name' = instance_name, 'Received (Y/N)' = received_yn, ` ` = wowhead_link, 'Last Updated' = last_updated, 'Note' = pivot.note, `Item Slot` = Slot)
   # rename columns
 
-buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`))
+buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`)) %>% 
+  filter(!(
+    `Item Name` %in% c("Warglaive of Azzinoth (mainhand)", "Warglaive of Azzinoth (offhand)") &
+       !Class %in% c("Warrior", "Rogue")
+     ))
 #remove column(s) for wishlist table
 
 buzz_wishlist_table %>% 
@@ -222,8 +226,10 @@ buzz_wishlist_table %>%
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 
 wishlist_lookup <- buzz_wishlist_table %>% 
+            filter(`Received (Y/N)` == "N") %>% 
             select(Name, `Item Name`, Boss, `Item Slot`, `Instance Name`) %>% 
-  arrange(`Item Name`)
+            mutate(`Item Name` = gsub("'","",`Item Name`),  `Item Name` = gsub(",","",`Item Name`)) %>% 
+            arrange(`Item Name`)
 
 write_sheet(wishlist_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "wishlist_lookup")
 ```
