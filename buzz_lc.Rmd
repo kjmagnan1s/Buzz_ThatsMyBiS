@@ -39,7 +39,7 @@ pacman::p_load(
 
 ```{r Load Data, echo=FALSE, warning=FALSE, message=FALSE}
 ## load json file
-buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json", flatten = TRUE)) %>% filter(!(name == "Evanpri" | name == "Niempo"))
+buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json", flatten = TRUE)) %>% filter(is_alt == 0)
 
 ## load iter/patterns from P6
 tier6_itemID <- read_csv("phase6_itemIDs.csv")
@@ -48,8 +48,7 @@ tier6_itemID <- read_csv("phase6_itemIDs.csv")
 loot_slot_details <- read.csv("loot_details_slot.csv")
 
 ## create master table of raiders
-buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% 
-  select(1, 2, 3, 4, 7, 8, 9, 36)
+buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% filter(is_alt == 0) %>% select(1, 2, 3, 4, 7, 8, 9, 36)
   # limit colunmns to a master table of buzz character names  
 
 # klsjhjfdkl
@@ -145,7 +144,7 @@ buzz_master_received %>%
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
   
 buzz_master_received %>% 
-  filter(!(Name == "Evanpri" | Name == "Niempo")) %>% 
+  filter(!(Name == "Evanpri" | Name == "Niempo" | Name == "Kinksauce")) %>% 
   select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
   mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
   mutate(`Date Received` = as_date(`Date Received`)) %>% 
