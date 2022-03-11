@@ -105,7 +105,8 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   
 ~*Need to figure out how to control table width*~
 ```{r Sparkline Table, echo=FALSE, warning=FALSE, message=FALSE}
-tidyloot <- buzz_master_received %>% 
+tidyloot <- buzz_master_received %>%
+  filter(`Item Type` == "Gear") %>% 
   group_by(Name, `Date Received`) %>% 
   mutate(Date = floor_date(as_date(`Date Received`))) %>%
   summarise(count = n())
@@ -151,9 +152,10 @@ buzz_master_received %>%
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
   
 buzz_master_received %>% 
-  filter(!(Name == "Evanpri" | Name == "Niempo" | Name == "Kinksauce")) %>% 
-  select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Item Type`, Boss, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
-  mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase, `Item Type`), factor)) %>% 
+  filter(!(Name == "Evanpri" | Name == "Niempo" | Name == "Kinksauce")) %>%
+  filter(`Item Type` == "Gear") %>% 
+  select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, Boss, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
+  mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
   mutate(`Date Received` = as_date(`Date Received`)) %>% 
   distinct() %>% 
   # factor columns for better filtering in table
@@ -162,7 +164,7 @@ buzz_master_received %>%
             options = list(pageLength = 40,
                            #order = list(8, 'desc'),
                            colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = list(list(9, 'desc')),dom = 'Blfrtip',
-                           searchCols = list(NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["Gear"]'), NULL, NULL , NULL, NULL, list(search = '["Phase 3"]')),
+                           searchCols = list(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL , NULL, NULL, list(search = '["Phase 3"]')),
                            buttons = c('copy', 'csv', 'excel')),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 ```
@@ -443,7 +445,7 @@ by_slot %>% ggplot() +
     plot.margin = margin(1.5, 0, 1.5, 0),
     plot.title = element_text(hjust = 0.05, vjust = 0, size = 12, family = "PT Sans")
   ) +
- ggtitle(paste0("Phase 2: ", nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 2")) - 1, " pieces of loot awarded so far")) +
+ ggtitle(paste0("Phase 2: ", nrow(buzz_master_received %>% filter(!(`Item Slot` == "N/A") & `Offspec (Y/N)` == "N" & Phase == "Phase 2")) - 1, " pieces of loot awarded in Phase 2")) +
   guides(fill = guide_legend(nrow = 1)) +
    annotation_custom(less,
                      xmin = 2,
