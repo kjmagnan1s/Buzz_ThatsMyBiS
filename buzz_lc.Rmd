@@ -79,9 +79,16 @@ buzz_master_received <- left_join(buzz_master, buzz_received, by = "id") %>%
   # logical for grouping loot into TBC phased releases 
   mutate(offspec_yn = ifelse(offspec_yn == 1, "Y", "N")) %>%
   # recode received column to Y/N
+  mutate(item_type = case_when(
+    grepl("Pattern", item_name) ~ "Recipe",
+    grepl("Plan", item_name) ~"Recipe",
+    grepl("Design", item_name) ~"Recipe",
+    TRUE ~ "Gear"
+  )) %>%
+  # identify patterns, designs, plans from gear
   left_join((loot_slot_details %>% select(item_name, Slot, Boss = source_name)), by = (c("item_name" = "item_name"))) %>% 
   # join in item slot
-  rename(Name = name, Class = class, Role = archetype, Spec = display_spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received)
+  rename(Name = name, Class = class, Role = archetype, Spec = display_spec, 'Item ID' = item_id, 'Item Name' = item_name, 'Item Slot' = Slot,'Offspec (Y/N)' = offspec_yn, ` ` = wowhead_link, 'Date Received' = date_received, `Item Type` = item_type)
   # final rename
 ```
 
@@ -145,8 +152,8 @@ buzz_master_received %>%
   
 buzz_master_received %>% 
   filter(!(Name == "Evanpri" | Name == "Niempo" | Name == "Kinksauce")) %>% 
-  select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
-  mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
+  select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, `Item Type`, Boss, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
+  mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase, `Item Type`), factor)) %>% 
   mutate(`Date Received` = as_date(`Date Received`)) %>% 
   distinct() %>% 
   # factor columns for better filtering in table
@@ -154,8 +161,9 @@ buzz_master_received %>%
             rownames = FALSE, selection = 'none', escape = FALSE, 
             options = list(pageLength = 40,
                            #order = list(8, 'desc'),
-                           colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = list(list(9, 'desc')),searchCols = list(
-                           NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["Phase 3"]'))),
+                           colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, order = list(list(9, 'desc')),dom = 'Blfrtip',
+                           searchCols = list(NULL, NULL, NULL, NULL, NULL, NULL, list(search = '["Gear"]'), NULL, NULL , NULL, NULL, list(search = '["Phase 3"]')),
+                           buttons = c('copy', 'csv', 'excel')),
             caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters and loot received.")
 ```
 
@@ -219,8 +227,8 @@ buzz_wishlist_table %>%
             # remove unnecessary columns for better table viewing
             distinct() %>% 
           datatable(class = 'display cell-border stripe hover row-border', filter = 'top', extensions = c('ColReorder', 'Scroller', 'Buttons'), escape = FALSE, rownames = FALSE,
-          options = list(nowrap = FALSE, pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', order = 
-                           list(list(10, 'desc')),
+          options = list(nowrap = FALSE, pageLength = 25,colReorder = TRUE, deferRender = TRUE, scrollY = 500, scroller = TRUE, dom = 'Blfrtip', 
+                         order = list(list(10, 'desc')),
                         buttons = c('copy', 'csv', 'excel')),
           caption = "Export of Giant JSON blob on ThatsMyBiS. All BUZZ guilds characters with their wish lists for Phase 3.")
 
