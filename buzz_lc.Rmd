@@ -48,7 +48,9 @@ tier6_itemID <- read_csv("phase6_itemIDs.csv")
 loot_slot_details <- read.csv("loot_details_slot.csv")
 
 ## create master table of raiders
-buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% filter(is_alt == 0) %>% select(1, 2, 3, 4, 7, 8, 9, 36)
+buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% filter(is_alt == 0) %>%
+  mutate(archetype = ifelse(archetype == "DPS", sub_archetype, archetype)) %>% 
+  select(1, 2, 3, 4, 7, 8, 9, 36)
   # limit colunmns to a master table of buzz character names  
 
 # klsjhjfdkl
