@@ -12,7 +12,7 @@ output:
 }
 </style>
 
-<h5> <span style="color:grey">Last updated `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")$mtime`</span> </h5>
+<h5> <span style="color:grey">Last updated `r file.info("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/character-json.json")$mtime`</span> </h5>
 
 ```{r setup and libraries, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -39,7 +39,7 @@ pacman::p_load(
 
 ```{r Load Data, echo=FALSE, warning=FALSE, message=FALSE}
 ## load json file
-buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json", flatten = TRUE)) %>% filter(is_alt == 0)
+buzz_raw <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/character-json.json", flatten = TRUE)) %>% filter(is_alt == 0)
 
 ## load iter/patterns from P6
 tier6_itemID <- read_csv("phase6_itemIDs.csv")
@@ -48,7 +48,7 @@ tier6_itemID <- read_csv("phase6_itemIDs.csv")
 loot_slot_details <- read.csv("loot_details_slot.csv")
 
 ## create master table of raiders
-buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/buzz_character-json.json")) %>% filter(is_alt == 0) %>%
+buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/character-json.json")) %>% filter(is_alt == 0) %>%
   mutate(archetype = ifelse(archetype == "DPS", sub_archetype, archetype)) %>% 
   select(1, 2, 3, 4, 7, 8, 9, 36)
   # limit colunmns to a master table of buzz character names  
