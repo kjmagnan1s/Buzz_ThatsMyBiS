@@ -154,7 +154,7 @@ buzz_master_received %>%
 ## A box and whisker interactive viz for loot for each class with different specs colored/symbols is a good one
   
 buzz_master_received %>% 
-  filter(!(Name == "Evanpri" | Name == "Niempo" | Name == "Kinksauce")) %>%
+  filter(!(Name == "Evanpri" | Name == "Niempo")) %>%
   filter(`Item Type` == "Gear") %>% 
   select(Name, Class, Role, Spec, `Item Name`, `Item Slot`, Boss, `Offspec (Y/N)`, ` `, `Date Received`, Phase) %>% 
   mutate(across(c(Name, Class, Role, Spec, `Item Slot`, `Offspec (Y/N)`, Phase), factor)) %>% 
