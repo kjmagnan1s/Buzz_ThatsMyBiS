@@ -227,6 +227,8 @@ buzz_wishlist_table <- buzz_master_wishlist %>%  select(!c(`Item Order`)) %>%
 
 buzz_wishlist_table %>% 
             select(Name, Class, Role, Spec, `Item Name`, Boss, `Item Slot`, `Instance Name`, `Received (Y/N)`, ` `,`Last Updated`, Note) %>%
+            mutate(Name = paste0("<a href=",'"https://classic.warcraftlogs.com/character/us/grobbulus/',Name,paste0('">',Name,'</a>'))) %>% 
+            # add warcraft logs armory link for each person
             mutate(`Date Received` = as_date(`Last Updated`)) %>% 
             # remove unnecessary columns for better table viewing
             distinct() %>% 
@@ -240,7 +242,8 @@ wishlist_lookup <- buzz_wishlist_table %>%
             filter(`Received (Y/N)` == "N") %>% 
             select(Name, `Item Name`, Boss, `Item Slot`, `Instance Name`) %>% 
             mutate(`Item Name` = gsub("'","",`Item Name`),  `Item Name` = gsub(",","",`Item Name`)) %>% 
-            arrange(`Item Name`)
+            arrange(`Item Name`) %>% 
+            mutate(Name = paste0('=HYPERLINK("https://classic.warcraftlogs.com/character/us/grobbulus/',Name,'"',paste0(',"',Name,'")')))
 
 write_sheet(wishlist_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "wishlist_lookup")
 ```
