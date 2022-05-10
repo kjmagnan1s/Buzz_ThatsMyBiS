@@ -242,10 +242,18 @@ wishlist_lookup <- buzz_wishlist_table %>%
             filter(`Received (Y/N)` == "N") %>% 
             select(Name, `Item Name`, Boss, `Item Slot`, `Instance Name`) %>% 
             mutate(`Item Name` = gsub("'","",`Item Name`),  `Item Name` = gsub(",","",`Item Name`)) %>% 
-            arrange(`Item Name`) %>% 
-            mutate(Name = paste0('=HYPERLINK("https://classic.warcraftlogs.com/character/us/grobbulus/',Name,'"',paste0(',"',Name,'")')))
+            arrange(`Item Name`)
+            # %>%  mutate(Name = paste0('=HYPERLINK("https://classic.warcraftlogs.com/character/us/grobbulus/',Name,'"',paste0(',"',Name,'")')))
+            ## add armory link to google sheets
+            ## can't fix for gsheets adding ' before formula starts 
+
+armory_lookup <- buzz_wishlist_table %>%
+  mutate(Name = paste0('=HYPERLINK("https://classic.warcraftlogs.com/character/us/grobbulus/',Name,'"',paste0(',"',Name,'")'))) %>% 
+  select(Name) %>% 
+  distinct()
 
 write_sheet(wishlist_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "wishlist_lookup")
+#write_sheet(armory_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "character_armory_lookup")
 ```
 
 ## Buzz wishlists aggregated 
