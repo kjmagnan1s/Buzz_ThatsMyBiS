@@ -47,6 +47,9 @@ tier6_itemID <- read_csv("phase6_itemIDs.csv")
 ## load tmb loot details
 loot_slot_details <- read.csv("loot_details_slot.csv")
 
+## load sunmote exchange file
+sunmote_exchange <- read.csv("sunmote_exchange_lookup.csv")
+
 ## create master table of raiders
 buzz_master <- data.table(fromJSON("~/GitHub/kjmagnan1s.github.io/Buzz_ThatsMyBiS/character-json.json")) %>% filter(is_alt == 0) %>%
   mutate(archetype = ifelse(archetype == "DPS", sub_archetype, archetype)) %>% 
@@ -188,6 +191,14 @@ buzz_master_wishlist <- left_join(buzz_master, buzz_wishlist, by = "id") %>%
   # join the wishlist table to the master character table
   select(name, class, archetype, display_spec, item_id, parent_item_id, item_name, instance_name, 'Item Order', received_yn, wowhead_link, last_updated, pivot.note) %>%
   #limit columns
+  left_join(sunmote_exchange, by = (c("item_name" = "Exchanged.item")), keep = TRUE) %>% 
+  mutate(instance_name = case_when(
+    item_name %in% Exchanged.item ~ "Sunwell Plateau",
+    TRUE ~ instance_name),
+    item_name = case_when(
+    item_name %in% Exchanged.item ~ Dropped.item,
+    TRUE ~ item_name)) %>%
+  # replace wishlisted items with dropped item for sunmote exchanges
   left_join(tier6_itemID, by = c("parent_item_id" = "item_ID")) %>% 
   # join tier6 google doc with data fixes from WoWHead for tier and patterns
   mutate(across(c(item_name, instance_name), as.character)) %>% 
@@ -252,7 +263,7 @@ armory_lookup <- buzz_wishlist_table %>%
   select(Name) %>% 
   distinct()
 
-write_sheet(wishlist_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "wishlist_lookup")
+write_sheet(wishlist_lookup, ss = "1S1i6WwtLN8gctm1vKUX8iln-KaIHrMfo64ggDfMQmIQ", sheet = "wishlist_lookup")
 #write_sheet(armory_lookup, ss = "19Zvy7pin_RMn9EyK7I4Mjdo5mCbKfOPry0KxTeJmE28", sheet = "character_armory_lookup")
 ```
 
