@@ -129,7 +129,7 @@ buzz_master_received %>%
   group_by(Name, Class, Role, Spec) %>%
   summarise(Received = n()) %>% 
   left_join(loot_sparkline) %>% 
-  datatable(rownames = FALSE, escape = FALSE, options = list(compact = TRUE, autoWidth = TRUE, pageLength = 40, scrollY = 500,
+  datatable(rownames = FALSE, escape = FALSE, options = list(compact = TRUE, autoWidth = TRUE, pageLength = 40, scrollY = 500, order = list(list(4, 'desc')),
                            fnDrawCallback = htmlwidgets::JS(
                              '
                              function(){
